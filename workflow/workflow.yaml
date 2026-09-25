@@ -1,0 +1,50 @@
+# OpenFn Lightning workflow definition (sanitised — no project/instance IDs or URLs).
+# Recreate in Lightning: new workflow → add a Cron trigger and six steps in this order,
+# paste each step's body from the matching .js file, and attach the two DHIS2 credentials.
+
+workflow:
+  name: GRD to CARPHA Weekly Syndromic
+
+  trigger:
+    type: cron
+    cron_expression: "0 6 * * 1"        # Mondays 06:00 UTC — pushes the last complete epi week (+ optionally the one before)
+
+  credentials:                            # create these in Lightning (DHIS2 credential type); names are suggestions
+    source_dhis2:                          # Grenada national DHIS2 — read access to the weekly surveillance dataset
+      schema: dhis2
+      fields: [hostUrl, username, password | apiToken]
+    destination_dhis2:                     # CARPHA regional DHIS2 — service account with data write on the
+      schema: dhis2                        # Weekly Syndromic Reporting Form for the country org unit
+      fields: [hostUrl, username, password | apiToken]
+
+  steps:
+    - name: loadMapping
+      adaptor: "@openfn/language-common@latest"
+      body: 1_loadMapping.js
+    - name: pullData
+      adaptor: "@openfn/language-dhis2@latest"
+      credential: source_dhis2
+      body: 2_pullData.js
+    - name: transform
+      adaptor: "@openfn/language-common@latest"
+      body: 3_transform.js
+    - name: validate
+      adaptor: "@openfn/language-common@latest"
+      body: 4_validate.js
+    - name: pushData
+      adaptor: "@openfn/language-dhis2@latest"
+      credential: destination_dhis2
+      body: 5_pushData.js
+    - name: notify
+      adaptor: "@openfn/language-common@latest"
+      body: 6_notify.js
+
+  edges:
+    - trigger    -> loadMapping   # always
+    - loadMapping -> pullData     # on success
+    - pullData   -> transform     # on success
+    - transform  -> validate      # on success
+    - validate   -> pushData      # on success
+    - pushData   -> notify        # on success
+
+# Tested with: worker 1.29.3, @openfn/language-common 3.3.5, @openfn/language-dhis2 8.3.1, DHIS2 2.40.
