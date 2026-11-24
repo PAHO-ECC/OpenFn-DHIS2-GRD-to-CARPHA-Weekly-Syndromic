@@ -1,5 +1,5 @@
 fn(state => {
-  const { weekValues, ytdValues, facilityGroupSet, synMapping, covidMapping, sitesMapping, periods, config } = state;
+  const { weekValues, facilityGroupSet, synMapping, sitesMapping, periods, config } = state;
   const out = [];
   const mkRow = (period, deCode, cocCode, value) => out.push({
     dataElement:          deCode,
@@ -65,26 +65,7 @@ fn(state => {
     });
     Object.values(synAcc).forEach(e => mkRow(period, e.deCode, e.cocCode, e.sum));
 
-    // 2. COVID weekly + cumulative — DISABLED for staging test (see loadMapping)
-    let wkCases = 0, wkTests = 0, wkNeg = 0, ytdCases = 0, ytdTests = 0, ytdNeg = 0;
-    /*const cm = covidMapping;
-    const sumByCode = (vals, code) => vals
-      .filter(dv => dv.dataElement === code && cm.allGrdCocs.includes(dv.categoryOptionCombo))
-      .reduce((a, b) => a + (parseFloat(b.value) || 0), 0);
-    wkCases = sumByCode(pValues, cm.srcCases);
-    wkTests = sumByCode(pValues, cm.srcTests);
-    wkNeg   = Math.max(0, wkTests - wkCases);
-    mkRow(period, cm.tgtWeekly, cm.cocPos, wkCases);
-    mkRow(period, cm.tgtWeekly, cm.cocNeg, wkNeg);
-    // YTD up to and including this period (ytdValues is pulled up to last week; same year only)
-    const ytdUpTo = ytdValues.filter(dv => dv.period.slice(0, 4) === period.slice(0, 4) && dv.period <= period);
-    ytdCases = sumByCode(ytdUpTo, cm.srcCases);
-    ytdTests = sumByCode(ytdUpTo, cm.srcTests);
-    ytdNeg   = Math.max(0, ytdTests - ytdCases);
-    mkRow(period, cm.tgtCum, cm.cocPos, ytdCases);
-    mkRow(period, cm.tgtCum, cm.cocNeg, ytdNeg);*/
-
-    // 3. Sites Expected/Reported — reported = bucket OUs with any data in this period
+    // 2. Sites Expected/Reported — reported = bucket OUs with any data in this period
     const reportingOuCodes = new Set(pValues.map(dv => dv.orgUnit));
     const expByBucket = {}, repByBucket = {};
     sitesMapping.forEach(rule => {
@@ -101,20 +82,18 @@ fn(state => {
     summaryByPeriod[period] = {
       sourceValues: pValues.length,
       synRows:      Object.keys(synAcc).length,
-      covidWeek:    { cases: wkCases, tests: wkTests, neg: wkNeg },
-      covidYtd:     { cases: ytdCases, tests: ytdTests, neg: ytdNeg },
       sites:        { expected: expByBucket, reported: repByBucket },
       totalRows:    out.length - startRows
     };
     console.log('Transform results ' + period + ':');
-    console.log('  Source values: ' + pValues.length + ' | Syndromic rows: ' + Object.keys(synAcc).length + ' | COVID: disabled for staging test');
+    console.log('  Source values: ' + pValues.length + ' | Syndromic rows: ' + Object.keys(synAcc).length);
     console.log('  Sites: expected=' + JSON.stringify(expByBucket) + ' reported=' + JSON.stringify(repByBucket));
     out.slice(startRows).forEach(dv => console.log('  ' + dv.dataElement + ' / ' + dv.categoryOptionCombo + ' = ' + dv.value));
   });
   console.log('(' + claimed.size + ' unique OUs bucketed) | Total CARPHA values: ' + out.length);
 
   // ── Cleanup: drop bulky source data so state stays small for validate/push/notify ──
-  // ytdValues alone is ~80k rows; weekValues ~4k; combined > 32MB serialized.
+  // weekValues is ~10k rows for two weeks — not needed after this step.
   return {
     config:            state.config,
     period:            state.period,

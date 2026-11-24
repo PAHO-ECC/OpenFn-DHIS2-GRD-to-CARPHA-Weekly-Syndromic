@@ -7,7 +7,7 @@ workflow:
 
   trigger:
     type: cron
-    cron_expression: "0 6 * * 1"        # Mondays 06:00 UTC — pushes the last complete epi week (+ optionally the one before)
+    cron_expression: "0 23 * * 2"       # Tuesdays 23:00 UTC — pushes the last complete epi week (+ optionally the one before)
 
   credentials:                            # create these in Lightning (DHIS2 credential type); names are suggestions
     source_dhis2:                          # Grenada national DHIS2 — read access to the weekly surveillance dataset

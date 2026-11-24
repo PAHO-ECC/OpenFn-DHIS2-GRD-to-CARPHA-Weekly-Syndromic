@@ -35,11 +35,7 @@ fn(state => {
   if (includePrev) periods.push(toPeriod(new Date(+fromPeriod(period) - 7 * DAY)));
   console.log('Periods to push: ' + periods.join(', ') + (includePrev ? '' : ' (week-before-last switched off)'));
 
-  const yr = period.slice(0, 4);
-  const wkN = parseInt(period.slice(-2), 10);
-  const ytdPeriods = [];
-  for (let i = 1; i <= wkN; i++) ytdPeriods.push(yr + 'SunW' + String(i).padStart(2, '0'));
-  return { ...state, period, periods, ytdPeriods };
+  return { ...state, period, periods };
 });
 
 // ── Resolve country OU code → UID (dataValueSets query params require UID) ──
@@ -89,24 +85,6 @@ fn(state => {
     const vals = state.weekValues.filter(d => d.period === p);
     console.log('Week values ' + p + ': ' + vals.length + ' from ' + new Set(vals.map(d => d.orgUnit)).size + ' OUs');
   });
-  return state;
-});
-
-// ── YTD data ──
-get('dataValueSets', state => ({
-  dataSet:                       state.countryDataSetUid,
-  period:                        state.ytdPeriods,
-  orgUnit:                       state.countryOuUid,
-  children:                      true,
-  dataSetIdScheme:               'CODE',
-  orgUnitIdScheme:               'CODE',
-  dataElementIdScheme:           'CODE',
-  categoryOptionComboIdScheme:   'CODE',
-  attributeOptionComboIdScheme:  'CODE'
-}));
-fn(state => {
-  state.ytdValues = (state.data && state.data.dataValues) || [];
-  console.log('YTD values: ' + state.ytdValues.length);
   return state;
 });
 

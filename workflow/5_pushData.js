@@ -1,4 +1,4 @@
-// ── Resolve CARPHA codes → UIDs (TEMP, until CARPHA fixes missing/duplicate codes) ──
+// ── Resolve CARPHA codes → UIDs (needed while some destination objects lack codes) ──
 // Some CARPHA objects have no code or a wrong one (see state.carphaOverrides in loadMapping), and
 // DHIS2 allows only ONE idScheme per object type per request. So DEs and COCs are resolved to UIDs here:
 // overrides first, then a code lookup against the CARPHA dataset. OU + dataset still go by CODE.
